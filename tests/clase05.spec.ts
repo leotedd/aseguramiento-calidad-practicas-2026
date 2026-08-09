@@ -267,5 +267,165 @@ test.describe(
       }
     );
 
+// TEST 11
+test(
+  'Tabla de decisión - Regla 3: acceso al checkout sin iniciar sesión',
+  async ({ page }) => {
+
+    // Intentar acceder directamente al checkout sin hacer login
+    await page.goto(
+      'https://www.saucedemo.com/checkout-step-one.html'
+    );
+
+    // Mostrar la URL final para comprobar el comportamiento real
+    console.log('URL final sin sesión:', page.url());
+
+    // SauceDemo debe impedir el acceso al checkout
+    await expect(page).toHaveURL(
+      'https://www.saucedemo.com/'
+    );
+
+    // Debe mostrar un mensaje de error
+    const errorMsg = page.locator('[data-test="error"]');
+
+    await expect(errorMsg).toBeVisible();
+
+    console.log(
+      'Mensaje mostrado:',
+      await errorMsg.textContent()
+    );
+  }
+);
+
+
+// TEST 12
+test(
+  'Tabla de decisión - Regla 4: checkout con carrito vacío',
+  async ({ page }) => {
+
+    // Login
+    await page.goto('https://www.saucedemo.com');
+
+    await page.locator('#user-name').fill('standard_user');
+    await page.locator('#password').fill('secret_sauce');
+    await page.locator('#login-button').click();
+
+    // Ir al carrito SIN agregar productos
+    await page.locator('.shopping_cart_link').click();
+
+    // Confirmar que realmente está vacío
+    const itemsCarrito = page.locator('.cart_item');
+
+    await expect(itemsCarrito).toHaveCount(0);
+
+    // Hacer clic en Checkout
+    await page.getByText('Checkout').click();
+
+    // Mostrar qué hace realmente SauceDemo
+    console.log(
+      'URL después de checkout con carrito vacío:',
+      page.url()
+    );
+  }
+);
+
+
+// TEST 13
+test(
+  'Tabla de decisión - Regla 5: formulario de checkout vacío',
+  async ({ page }) => {
+
+    // Login
+    await page.goto('https://www.saucedemo.com');
+
+    await page.locator('#user-name').fill('standard_user');
+    await page.locator('#password').fill('secret_sauce');
+    await page.locator('#login-button').click();
+
+    // Agregar producto
+    await page.locator('.btn_inventory').first().click();
+
+    // Ir al carrito
+    await page.locator('.shopping_cart_link').click();
+
+    // Iniciar checkout
+    await page.getByText('Checkout').click();
+
+    await expect(page).toHaveURL(/checkout-step-one/);
+
+    // No llenar ningún campo y presionar Continue
+    await page.locator('#continue').click();
+
+    // Obtener el mensaje real
+    const errorMsg = page.locator('[data-test="error"]');
+
+    await expect(errorMsg).toBeVisible();
+
+    console.log(
+      'Error con formulario vacío:',
+      await errorMsg.textContent()
+    );
+  }
+);
+
+
+// TEST 14
+test(
+  'Tabla de decisión - Regla 6: verificar errores según campo faltante',
+  async ({ page }) => {
+
+    // Login
+    await page.goto('https://www.saucedemo.com');
+
+    await page.locator('#user-name').fill('standard_user');
+    await page.locator('#password').fill('secret_sauce');
+    await page.locator('#login-button').click();
+
+    // Agregar producto
+    await page.locator('.btn_inventory').first().click();
+
+    // Ir al carrito y comenzar checkout
+    await page.locator('.shopping_cart_link').click();
+    await page.getByText('Checkout').click();
+
+    // CASO 1: falta First Name
+    await page.locator('#last-name').fill('Hernandez');
+    await page.locator('#postal-code').fill('01001');
+
+    await page.locator('#continue').click();
+
+    const errorMsg = page.locator('[data-test="error"]');
+
+    console.log(
+      'Error cuando falta First Name:',
+      await errorMsg.textContent()
+    );
+
+    // CASO 2: falta Last Name
+    await page.locator('#first-name').fill('Teddy');
+    await page.locator('#last-name').fill('');
+
+    await page.locator('#continue').click();
+
+    console.log(
+      'Error cuando falta Last Name:',
+      await errorMsg.textContent()
+    );
+
+    // CASO 3: falta Postal Code
+    await page.locator('#last-name').fill('Hernandez');
+    await page.locator('#postal-code').fill('');
+
+    await page.locator('#continue').click();
+
+    console.log(
+      'Error cuando falta Postal Code:',
+      await errorMsg.textContent()
+    );
+  }
+);
+
+
+
   }
 );
