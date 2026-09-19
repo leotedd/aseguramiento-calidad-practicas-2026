@@ -3,17 +3,19 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './tests',
   timeout: 30000,
+  retries: 1,
 
   reporter: [
     ['list'],
-    ['html', { open: 'never' }],
+    ['html', { outputFolder: 'playwright-report', open: 'never' }],
   ],
 
   use: {
-    baseURL: 'https://www.demoblaze.com',
-    headless: false,
-    screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    baseURL: 'https://www.saucedemo.com',
+    headless: true,
+    screenshot: 'on',
+    video: 'on',
+    trace: 'on',
   },
 
   projects: [
