@@ -212,6 +212,126 @@ Archivo:
 
 ---
 
+## Clase 10 - Multi-browser y Tags
+
+Archivos:
+
+- `tests/clase10-smoke.spec.ts`
+- `tests/clase10-regression.spec.ts`
+- `tests/tarea10.spec.ts`
+
+### Conceptos
+
+- **Smoke Testing:** pruebas rápidas que verifican que lo esencial funciona
+  (login, inventario, carrito y checkout). Se ejecutan primero.
+- **Regression Testing:** pruebas más detalladas que confirman que lo que ya
+  funcionaba no se rompió (ordenamientos, botón Add/Remove, detalle de producto).
+- **Tags:** se agregan con la propiedad `tag` de Playwright, por ejemplo
+  `{ tag: '@smoke' }`, y sirven para agrupar y filtrar tests.
+- **Tags múltiples:** un test puede tener varias categorías:
+  `{ tag: ['@regression', '@ui'] }`.
+- **`--grep`:** ejecuta solo los tests que coinciden con el tag.
+- **`--grep-invert`:** excluye los tests que coinciden con el tag.
+- **`expect.soft()`:** la aserción no detiene el test si falla; los errores
+  se acumulan en `testInfo.errors` y se reportan al final.
+- **`browserName`:** fixture que indica el motor en ejecución
+  (`chromium`, `firefox` o `webkit`) para adaptar una aserción.
+- **Cross-browser testing:** ejecutar los mismos tests en distintos navegadores
+  y dispositivos para verificar que el comportamiento es el mismo.
+
+### Projects configurados (`playwright.config.ts`)
+
+| Project | Dispositivo |
+|---|---|
+| chromium | Desktop Chrome |
+| firefox | Desktop Firefox |
+| webkit | Desktop Safari |
+| mobile-chrome | Pixel 5 |
+| mobile-safari | iPhone 12 |
+
+Se usa `workers: 1` porque con `headless: false` varias ventanas en paralelo
+pueden provocar timeouts. Se conserva `baseURL: 'https://www.demoblaze.com'`
+para las Clases 1-4; Sauce Demo se usa con URL completa.
+
+### Smoke Tests (`@smoke`)
+
+1. La pagina de login carga
+2. Login con usuario estandar funciona
+3. El inventario muestra productos
+4. El carrito es accesible
+5. El checkout inicia correctamente
+
+### Regression Tests (`@regression`)
+
+1. Ordenamiento A-Z funciona
+2. Ordenamiento Z-A funciona
+3. Precio de menor a mayor funciona
+4. El boton "Remove" aparece despues de agregar al carrito
+5. Navegar al detalle del producto y regresar
+
+### Tarea 10
+
+1. **Reto 1 - Tags múltiples + `--grep-invert`:** test con
+   `['@regression', '@ui']` que valida el header del inventario. Se incluye con
+   `--grep "@regression"` y se excluye con `--grep-invert "@ui"`.
+2. **Reto 2 - `expect.soft()`:** valida nombre, descripción, precio (formato
+   `$0.00`), imagen y botón del primer producto sin detenerse en el primer
+   fallo, e imprime la cantidad de errores de `testInfo.errors`.
+3. **Reto 3 - `browserName`:** adapta la aserción del user agent según el
+   motor (`chromium` → Chrome, `firefox` → Firefox, `webkit` → AppleWebKit
+   sin Chrome), sin usar `test.skip()`.
+
+### Comandos
+
+```bash
+npx playwright test --grep "@smoke"
+npx playwright test --grep "@regression"
+npx playwright test --project=firefox
+npx playwright test --project=mobile-chrome --grep "@smoke"
+npx playwright test tests/tarea10.spec.ts
+npx playwright test tests/tarea10.spec.ts --grep-invert "@ui"
+npx playwright show-report
+```
+
+### Resultados
+
+Ejecución completa de Clase 10 (smoke + regression + tarea10):
+
+```bash
+npx playwright test tests/clase10-smoke.spec.ts tests/clase10-regression.spec.ts tests/tarea10.spec.ts
+```
+
+13 tests x 5 projects = 65 ejecuciones → **61 passed, 4 flaky, 0 failed,
+0 skipped**.
+
+| Project | Resultado |
+|---|---|
+| chromium | 13/13 passed |
+| firefox | 13/13 (2 flaky, pasaron en el retry) |
+| webkit | 13/13 (2 flaky, pasaron en el retry) |
+| mobile-chrome | 13/13 passed |
+| mobile-safari | 13/13 passed |
+
+Los 4 flaky fueron timeouts intermitentes en el login de Sauce Demo
+(`helpers/auth.ts`) al ejecutar con `headless: false`. Pasaron en el retry
+configurado (`retries: 1`) y no se reprodujeron al volver a ejecutarlos.
+
+Validación de tags en `tarea10.spec.ts`:
+
+- `--grep "@regression"` → ejecuta Reto 1 y Reto 2 (10 ejecuciones).
+- `--grep-invert "@ui"` → ejecuta Reto 2 y Reto 3 y excluye el Reto 1
+  (10 ejecuciones → 10 passed).
+
+Validación por motor (`--project=chromium|firefox|webkit`): 3/3 passed en
+cada uno. El Reto 3 imprime el user agent de cada navegador y
+`testInfo.errors` reporta 0 errores acumulados en el Reto 2.
+
+Evidencia del reporte HTML multi-browser:
+
+![Reporte HTML Clase 10](evidencias/clase10-reporte-multibrowser.png)
+
+---
+
 # Casos de prueba
 
 ## TC-001
